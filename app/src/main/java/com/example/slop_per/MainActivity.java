@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,14 +13,19 @@ import android.content.pm.PackageManager;
 
 import androidx.annotation.NonNull;
 
+import android.os.storage.StorageManager;
+import android.os.strictmode.IntentReceiverLeakedViolation;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -30,76 +36,51 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static androidx.core.content.ContextCompat.getSystemService;
+import static androidx.core.content.ContextCompat.startActivity;
 
 public class MainActivity extends AppCompatActivity {
     private final String pathTo = "";
+    private final Dloader dinit = new Dloader();
 
     private static final int PERMISSION_STORAGE_CODE = 1000;
-    //private static final String DIRECTORY_DOCUMENT = ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //check for if permissions are granted
         if (checkSelfPermission(WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
             String[] permissions = new String[]{READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE};
             requestPermissions(permissions, PERMISSION_STORAGE_CODE);
         }
 
-        android.widget.Button button = findViewById(R.id.starter);
-        button.setOnClickListener(v -> {
+        findViewById(R.id.starter).setOnClickListener(v -> {//set click listner for button
             try {
-                startDownload();
-            } catch (IOException e) {
+                dStarter();//starts download initiater
+                Thread.sleep(7000); //halt during file download
+
+            } catch (InterruptedException e) {
                 Toast.makeText(this, String.valueOf(e), Toast.LENGTH_SHORT).show();
             }
         });
+
+//            File ziper = new File("//Folder//Vanilla.zip");
+//            TextView txt = findViewById(R.id.path);
+//            txt.setText(this.getDataDir().toString());
+//            TextView txt2 = findViewById(R.id.pather);
+//            txt2.setText(ziper.getAbsolutePath().toString());
+
     }
 
-    @Override
-    protected void onPause() {
-        //Toast.makeText(this,"Paused",Toast.LENGTH_SHORT).show();
-        super.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        //Toast.makeText(this,"Stopped", Toast.LENGTH_SHORT).show();
-        super.onStop();
-    }
-
-    @Override
-    protected void onResume() {
-        //Toast.makeText(this,"Resumed Activity",Toast.LENGTH_SHORT).show();
-        super.onResume();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == PERMISSION_STORAGE_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                try {
-                    startDownload();
-
-                } catch (IOException e) {
-                    Toast.makeText(this, String.valueOf(e), Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Toast.makeText(this, "Storage Permission is required to use This App", Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    public File getCachePath() {
-        return this.getCacheDir();
-    }
-
-    private void startDownload() throws IOException {
+/*    private void startDownload() throws IOException, InterruptedException {
         //url
         String url = "https://tinyurl.com/38eruapu";
         //Download Manager setup
@@ -113,33 +94,47 @@ public class MainActivity extends AppCompatActivity {
         //allows mediascanner to scan downloaded file
         dLoader.allowScanningByMediaScanner();
         //notification visibility can not be hidden
-        dLoader.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_ONLY_COMPLETION);
+        dLoader.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN);
         //file creation
         //File cacheFile = new File(this.getCacheDir(), "Vanilla.zip");
         //directory where downloaded file is going to be in __gets current timestamp as file name
         dLoader.setDestinationInExternalFilesDir(this, "//Folder//", "Vanilla.zip");
         TextView tView = findViewById(R.id.path);
-        //File ziper = new File("//Folder//Vanilla.zip");
-        //pathTo = String.valueOf(File.getAbsolutePath());
 
+
+        File ziper = new File("//Folder//Vanilla.zip");
+        tView.setText(ziper.getAbsolutePath());
+        //pathTo = String.valueOf(File.getAbsolutePath());
         //get download service and enque file
         DownloadManager dManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
         dManager.enqueue(dLoader);
+        Thread.sleep(5000);
+//        extractZip();
+
+    }*/
+
+    private void clearC() {
+        Intent intent = new Intent(StorageManager.ACTION_CLEAR_APP_CACHE);
+        startActivity(intent);
     }
 
-    private void extractZip() throws IOException {
-        ZipFile Vanilla = new ZipFile(new File("Vanilla.zip"));
-        Enumeration<? extends ZipEntry> entries = Vanilla.entries();
+    public void dStarter() throws InterruptedException {
+        DownloadManager dManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+        dinit.initer(this, dManager);
+    }
 
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
-            //String nextr =  entries.nextElement();
-            File folderw = new File("tkwgter5834");
-            InputStream stream = Vanilla.getInputStream(entry);
-            FileInputStream inpure = new FileInputStream("Vanilla.zip");
-            FileOutputStream outter = new FileOutputStream(new File(folderw + "//" + entry.toString()));
-            outter.write(inpure.read());
-            outter.close();
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == PERMISSION_STORAGE_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                try {
+                    dStarter();//starts download initiater
+                } catch (InterruptedException e) {
+                    Toast.makeText(this, String.valueOf(e), Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(this, "Storage Permission is required to use This App", Toast.LENGTH_LONG).show();
+            }
         }
     }
 }
