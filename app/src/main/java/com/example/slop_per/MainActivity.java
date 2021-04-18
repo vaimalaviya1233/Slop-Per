@@ -30,6 +30,7 @@ import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
@@ -51,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSION_STORAGE_CODE = 1000;
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
                 dStarter();//starts download initiater
                 Thread.sleep(7000); //halt during file download
 
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | IOException e) {
                 Toast.makeText(this, String.valueOf(e), Toast.LENGTH_SHORT).show();
             }
         });
@@ -109,27 +111,29 @@ public class MainActivity extends AppCompatActivity {
         DownloadManager dManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
         dManager.enqueue(dLoader);
         Thread.sleep(5000);
-//        extractZip();
 
     }*/
 
+    @RequiresApi(api = Build.VERSION_CODES.R)
     private void clearC() {
         Intent intent = new Intent(StorageManager.ACTION_CLEAR_APP_CACHE);
         startActivity(intent);
     }
 
-    public void dStarter() throws InterruptedException {
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void dStarter() throws InterruptedException, IOException {
         DownloadManager dManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
         dinit.initer(this, dManager);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PERMISSION_STORAGE_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 try {
                     dStarter();//starts download initiater
-                } catch (InterruptedException e) {
+                } catch (InterruptedException | IOException e) {
                     Toast.makeText(this, String.valueOf(e), Toast.LENGTH_SHORT).show();
                 }
             } else {

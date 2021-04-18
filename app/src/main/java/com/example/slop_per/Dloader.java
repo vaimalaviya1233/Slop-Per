@@ -1,48 +1,37 @@
 package com.example.slop_per;
 
 import android.app.DownloadManager;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.os.storage.StorageManager;
-import android.widget.TextView;
-import android.widget.Toast;
 import android.content.Context;
+import android.net.Uri;
+import android.os.Build;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Scanner;
-import java.io.*;
-import java.util.*;
+import java.io.InputStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static android.content.Context.DOWNLOAD_SERVICE;
-import static androidx.core.content.ContextCompat.getSystemService;
-import static androidx.core.content.ContextCompat.startActivity;
-
 class Dloader {
-    private void extractZip() throws IOException {
+    private void extractZip(Context cnt) throws IOException {
         ZipFile Vanilla = new ZipFile(new File("Vanilla.zip"));
         Enumeration<? extends ZipEntry> entries = Vanilla.entries();
 
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
             File folderw = new File("tkwgter5834");
+            File folder = cnt.getFilesDir();
             InputStream stream = Vanilla.getInputStream(entry);
             FileInputStream inpure = new FileInputStream("Vanilla.zip");
-            FileOutputStream outter = new FileOutputStream(new File(folderw + "//" + entry.toString()));
+            FileOutputStream outter = new FileOutputStream(new File(folder + "//" + entry.toString()));
             outter.write(inpure.read());
             outter.close();
         }
@@ -56,11 +45,13 @@ class Dloader {
         return cnt.getDataDir();
     }//data directory
 
-    public void initer(Context cnt, DownloadManager dManager) throws InterruptedException {
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void initer(Context cnt, DownloadManager dManager) throws InterruptedException, IOException {
         startDownload(cnt, dManager);
     }//download starter
 
-    private void startDownload(Context cnt, @NotNull DownloadManager dManager) throws InterruptedException {
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void startDownload(Context cnt, @NotNull DownloadManager dManager) throws InterruptedException, IOException {
         //url
         String url = "https://tinyurl.com/38eruapu";
         //Download Manager setup
@@ -75,18 +66,16 @@ class Dloader {
         dLoader.allowScanningByMediaScanner();
         //file creation
         File cacheFile = new File("Vanilla.zip");
-        //directory where downloaded file is going to be in __gets current timestamp as file name
+        File tempfile = File.createTempFile("Vanilla", ".zip");
         //dLoader.setDestinationInExternalPublicDir(String.valueOf(cnt.getCacheDir()),String.valueOf(cacheFile));
-        dLoader.setDestinationInExternalFilesDir(cnt, "", String.valueOf(cacheFile));
-
-
-//        File ziper = new File("//Folder//Vanilla.zip");
-//        tView.setText(ziper.getAbsolutePath());
-        //pathTo = String.valueOf(File.getAbsolutePath());
+        dLoader.setDestinationInExternalFilesDir(cnt, "", String.valueOf(tempfile));
         //get download service and enque file
         dManager.enqueue(dLoader);
         Thread.sleep(5000);
-
+        File directory = new File("Data");
+        Path zipPath = Paths.get(String.valueOf(tempfile));
+        Path extPath = Paths.get(String.valueOf(directory));
+        ZipFileUnZip.unzipFolder(zipPath, extPath);
     }
 }
 
